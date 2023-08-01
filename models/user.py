@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 """ holds class User"""
+import hashlib
 import models
 from models.base_model import BaseModel, Base
 from os import getenv
@@ -16,10 +17,16 @@ class User(BaseModel, Base):
         password = Column(String(128), nullable=False)
         first_name = Column(String(128), nullable=True)
         last_name = Column(String(128), nullable=True)
-        places = relationship("Place", backref="user", cascade="delete, all")
+        places = relationship(
+            "Place",
+            cascade="all, delete, delete-orphan",
+            backref="user"
+        )
         reviews = relationship(
-                "Review", backref="user", cascade="delete, all"
-         )
+            "Review",
+            cascade="all, delete, delete-orphan",
+            backref="user"
+        )
     else:
         email = ""
         password = ""
@@ -30,12 +37,11 @@ class User(BaseModel, Base):
         """initializes user"""
         super().__init__(*args, **kwargs)
 
-    def __init__(self, *args, **kwargs):
-        """initializes user"""
-        super().__init__(*args, **kwargs)
-
-    def __setattr__(self, __name, __value):
-        """Encrypt user password"""
-        if __name == "password":
-            __value = md5(__value.encode()).hexdigest()
-        return super().__setattr__(__name, __value)
+    def __setattr__(self, __name: str, __value) -> None:
+        '''Sets an attribute of this class to a given value.'''
+        if __name == 'password':
+            if type(__value) is str:
+                m = hashlib.md5(bytes(__value, 'utf-8'))
+                super().__setattr__(__name, m.hexdigest())
+        else:
+            super().__setattr__(__name, __value)
